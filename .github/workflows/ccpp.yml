@@ -1,2 +1,0 @@
-- name: ghaction-cmake
-  uses: lpenz/ghaction-cmake@v0.1
