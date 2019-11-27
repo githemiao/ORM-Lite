@@ -8,6 +8,8 @@
 #include <tuple>
 
 #include "../src/ormlite.h"
+#include "../src/sqlite_connector.h"
+
 using namespace BOT_ORM;
 using namespace BOT_ORM::Expression;
 
@@ -116,7 +118,8 @@ int main ()
     */
 
     // Open a Connection with 'sample.db'
-    ORMapper mapper ("sample.db");
+    auto c = std::make_shared<BOT_ORM_Impl::SqliteConnector>("sample.db");
+    ORMapper mapper(c);
 
     /*
         ## Create or Drop Tables
