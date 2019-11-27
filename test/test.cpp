@@ -8,6 +8,7 @@
 #include <string>
 
 #include "../src/ormlite.h"
+#include "../src/sqlite_connector.h"
 using namespace BOT_ORM;
 using namespace BOT_ORM::Expression;
 
@@ -65,7 +66,8 @@ namespace detail
     template<typename Model>
     void ResetTable (const Model &model)
     {
-        ORMapper mapper (TESTDB);
+        auto c = std::make_shared<BOT_ORM_Impl::SqliteConnector>(TESTDB);
+        ORMapper mapper (c);
 
         try {
             mapper.CreateTbl (model);
@@ -90,7 +92,8 @@ TEST_CASE ("create/drop tables")
 {
     ResetTables (ModelA {}, ModelB {}, ModelC {}, ModelD {});
 
-    ORMapper mapper (TESTDB);
+    auto c = std::make_shared<BOT_ORM_Impl::SqliteConnector>(TESTDB);
+    ORMapper mapper (c);
 
     mapper.DropTbl (ModelA {});
     mapper.DropTbl (ModelB {});
@@ -109,7 +112,7 @@ TEST_CASE ("normal cases")
     ModelD md;
     auto field = FieldExtractor { ma, md };
 
-    ORMapper mapper (TESTDB);
+    ORMapper mapper (std::make_shared<BOT_ORM_Impl::SqliteConnector>(TESTDB));
 
     mapper.Insert (ModelD { 0 });
     mapper.Insert (ModelD { 0 }, false);
@@ -160,7 +163,7 @@ TEST_CASE ("handle existing table")
     }
 
     // test
-    ORMapper mapper (TESTDB);
+    ORMapper mapper (std::make_shared<BOT_ORM_Impl::SqliteConnector>(TESTDB));
     REQUIRE_THROWS_WITH (mapper.Query (ModelD {}).ToList (),
         "SQL error: 'Bad Column Count' at 'select * from ModelD;'");
 }
@@ -171,7 +174,7 @@ TEST_CASE ("chinese characters")
     ResetTables (ModelA {});
 
     // test
-    ORMapper mapper (TESTDB);
+    ORMapper mapper (std::make_shared<BOT_ORM_Impl::SqliteConnector>(TESTDB));
 
     mapper.Insert (
         ModelA { 0, "你好", 0, nullptr, nullptr, nullptr }, false);
@@ -190,7 +193,7 @@ TEST_CASE ("lifetime of mapper")
     // before
     ResetTables (ModelA {});
     {
-        ORMapper mapper (TESTDB);
+        ORMapper mapper (std::make_shared<BOT_ORM_Impl::SqliteConnector>(TESTDB));
         mapper.Insert (ModelA {}, false);
         mapper.Insert (ModelA {}, false);
     }
@@ -198,7 +201,7 @@ TEST_CASE ("lifetime of mapper")
     // test
     std::unique_ptr<Queryable<ModelA>> queryable;
     {
-        ORMapper mapper (TESTDB);
+        ORMapper mapper (std::make_shared<BOT_ORM_Impl::SqliteConnector>(TESTDB));
         queryable.reset (new Queryable<ModelA> { mapper.Query (ModelA {}) });
     }
     REQUIRE (queryable->ToList ().size () == 2);
@@ -208,7 +211,7 @@ using InvalidModel = int;
 
 TEST_CASE ("invalid model", "[not-compile]")
 {
-    ORMapper mapper (TESTDB);
+    ORMapper mapper (std::make_shared<BOT_ORM_Impl::SqliteConnector>(TESTDB));
 
     //mapper.CreateTbl (InvalidModel {});
     //mapper.CreateTbl (InvalidModel {}, Constraint::Unique (Field<int> {"", nullptr}));
@@ -243,7 +246,7 @@ struct SickModel
 
 TEST_CASE ("invalid field", "[not-compile]")
 {
-    ORMapper mapper (TESTDB);
+    ORMapper mapper (std::make_shared<BOT_ORM_Impl::SqliteConnector>(TESTDB));
 
     //mapper.CreateTbl (SickModel {});
     //mapper.Insert (SickModel {});
